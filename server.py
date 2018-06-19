@@ -1,10 +1,11 @@
 # coding:utf-8
-from __future__ import print_function, unicode_literals
+from __future__ import print_function
 import socket
 import hashlib
 import random
 from Crypto.Cipher import AES
 import base64
+from code import DES, DES2, desdecode, desencode, encode, decode
 
 port = 5555
 # 监听来自任何客户端的请求
@@ -13,17 +14,21 @@ host = "localhost"
 LOG_FILE = "log.txt"
 
 
-key = 0xff
-def encrypt(src):
-    return ''.join([unichr(ord(x)^key) for x in src]).encode('utf-8').upper()
+def encrypt(s):
+    if len(s) % 16 != 0:
+        s = s.zfill(len(s) / 16 * 16 + 16)
+    return ' '.join([bin(ord(c)).replace('0b', '') for c in s])
 
 
-def decrypt(src):
-    return ''.join([unichr(ord(x)^key) for x in src.decode('utf-8')])
-
-
+def decrypt(s):
+    print("first", s)
+    s = '1' + '1'.join(s.split('1')[1:])
+    print("second", s)
+    return ''.join([chr(i) for i in [int(b, 2) for b in s.split(' ')]])
 
 # 日志记录用户活动
+
+
 def log_user_action(client_name, success_flag):
     with open(LOG_FILE, "a") as f:
         import time
@@ -80,35 +85,26 @@ def resume_info(client_name):
         f.writelines(info_list)
 
 
-def jiami(line):
-    #line = base64.b64decode(line)
-
-    secret = "3245435" # 由用户输入的16位或24位或32位长的初始密码字符串
-    #secret = encrypt(secret)
-    print("----")
-    print(secret)
-    print(len(secret))
-    if len(secret)<16:
-        secret = secret.zfill(16)
-    elif len(secret)>16:
-        secret = secret[:16]
-
-    cipher = AES.new(secret) # cipher = AES.new(secret)
-
-    print(cipher.decrypt(line))  # 解密
-    result = cipher.decrypt(line)
-
-    result = result.split(b'0')[-1]
- #   result = result[10:]
-    print(decrypt(result))
-    return decrypt(result)
+def jiemi_des(line):
+    # print(decode())
+    c = desdecode(line, '0f1571c947')
+    print("DES解密后的值", c)
+    # c = '1' + '1'.join(c.split('1')[1:])
+    # print("去掉额外补位的零之后的值", c)
+    # print("解码后的值", decode(c))
+    return decode(c)
 
 
 def communication(clientfile):
-    while 1:
+    while True:
         line = clientfile.readline().strip()
-        result = jiami(line)
-        print("收到 "+result)
+        print('收到的未解密的Line', line)
+        result = jiemi_des(line)
+        print(">>")
+        print(result)
+        print("<<")
+        print("收到!", result)
+        #print("收到 "+result)
         if result == "1":
             break
 
@@ -140,13 +136,13 @@ def server_process():
             client_name = client_name.split("_")[1]
             seed = produce_seed()
             m = produce_m()
-            clientfile.write("S/Key "+seed+" "+m+"\n")
+            clientfile.write("S/Key " + seed + " " + m + "\n")
             first_hashed_result = clientfile.readline().strip()
             print("收到了用户初次发来的md5值", first_hashed_result)
             with open("user_info.txt", 'a') as f:
-                f.write(client_name+" "+seed+" "+str(m)+" "+first_hashed_result+"\n")
+                f.write(client_name + " " + seed + " " + str(m) + " " + first_hashed_result + "\n")
             with open("resume_info.txt", 'a') as f:
-                f.write(client_name+" "+seed+" "+str(m)+" "+first_hashed_result+"\n")
+                f.write(client_name + " " + seed + " " + str(m) + " " + first_hashed_result + "\n")
         else:
             print("当前用户已经注册，即将验证真伪")
             is_find = False
@@ -174,7 +170,7 @@ def server_process():
                             last_hashed_result = info.split(" ")[3].split("\n")[0]
                             is_find = True
                             break
-                m = str(int(m)-1)
+                m = str(int(m) - 1)
                 clientfile.write("S/Key " + seed + " " + m + "\r\n")
                 now_hashed_result = clientfile.readline().split("\r\n")[0].strip()
                 print("收到了用户发来的不知道真伪的md5值", now_hashed_result)
@@ -184,11 +180,11 @@ def server_process():
                 # print("jixu")
                 # print(list(last_hashed_result))
                 test_hashed_result = hash_private_kai_of_m(now_hashed_result, 1)
-                print("计算之后的md5值",  test_hashed_result)
+                print("计算之后的md5值", test_hashed_result)
                 if test_hashed_result == last_hashed_result:
                     print("用户登陆成功")
                     success_flag = True
-                    clientfile.write("success"+"\r\n")
+                    clientfile.write("success" + "\r\n")
                     communication(clientfile)
                 else:
                     print("登录失败")
@@ -198,7 +194,7 @@ def server_process():
                 # 暂存更新m值后的列表
                 for index, info in enumerate(info_list):
                     if info.split(" ")[0] == client_name:
-                        info_list[index] = info.split(" ")[0]+" "+info.split(" ")[1]+" "+str(m)+" "+now_hashed_result+"\n"
+                        info_list[index] = info.split(" ")[0] + " " + info.split(" ")[1] + " " + str(m) + " " + now_hashed_result + "\n"
                         break
 
                 with open("user_info.txt", 'w') as f:
@@ -218,6 +214,7 @@ def server_process():
         clientfile.close()
         clientsocket.close()
 
+
 if __name__ == '__main__':
-    while 1:
+    while True:
         server_process()
