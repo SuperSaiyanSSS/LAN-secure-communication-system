@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE Project SYSTEM "Project-5.1.dtd">
+<!-- eric project file for project LAN -->
+<!-- Saved: 2018-06-20, 11:25:24 -->
+<!-- Copyright (C) 2018 wxw,  -->
+<Project version="5.1">
+  <Language>en_US</Language>
+  <Hash>5bee36ba5c68d425444ac90d2602aa75abc7bd6a</Hash>
+  <ProgLanguage mixed="0">Python2</ProgLanguage>
+  <ProjectType>Qt4</ProjectType>
+  <Version>0.1</Version>
+  <Author>wxw</Author>
+  <Email></Email>
+  <Eol index="0"/>
+  <Sources>
+    <Source>Ui_home.py</Source>
+    <Source>Ui_index.py</Source>
+    <Source>Ui_login_in.py</Source>
+    <Source>Ui_sign_up.py</Source>
+    <Source>__init__.py</Source>
+    <Source>home.py</Source>
+    <Source>index.py</Source>
+    <Source>login_in.py</Source>
+    <Source>sign_up.py</Source>
+  </Sources>
+  <Forms>
+    <Form>home.ui</Form>
+    <Form>index.ui</Form>
+    <Form>login_in.ui</Form>
+    <Form>sign_up.ui</Form>
+  </Forms>
+  <Translations/>
+  <Resources/>
+  <Interfaces/>
+  <Others/>
+  <Vcs>
+    <VcsType>None</VcsType>
+  </Vcs>
+  <FiletypeAssociations>
+    <FiletypeAssociation pattern="*.idl" type="INTERFACES"/>
+    <FiletypeAssociation pattern="*.ptl" type="SOURCES"/>
+    <FiletypeAssociation pattern="*.py" type="SOURCES"/>
+    <FiletypeAssociation pattern="*.py2" type="SOURCES"/>
+    <FiletypeAssociation pattern="*.pyw" type="SOURCES"/>
+    <FiletypeAssociation pattern="*.pyw2" type="SOURCES"/>
+    <FiletypeAssociation pattern="*.qm" type="TRANSLATIONS"/>
+    <FiletypeAssociation pattern="*.qrc" type="RESOURCES"/>
+    <FiletypeAssociation pattern="*.ts" type="TRANSLATIONS"/>
+    <FiletypeAssociation pattern="*.ui" type="FORMS"/>
+  </FiletypeAssociations>
+</Project>
