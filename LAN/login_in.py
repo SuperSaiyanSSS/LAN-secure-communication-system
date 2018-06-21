@@ -7,6 +7,7 @@ Module implementing LoginInWindow.
 from PyQt4.QtCore import pyqtSignature
 from PyQt4.QtGui import QMainWindow
 import global_var
+from PyQt4 import QtCore
 from Ui_login_in import Ui_MainWindow
 
 
@@ -14,6 +15,7 @@ class LoginInWindow(QMainWindow, Ui_MainWindow):
     """
     Class documentation goes here.
     """
+    SendWordSignal = QtCore.pyqtSignal(str)
     def __init__(self, parent=None):
         """
         Constructor
@@ -25,7 +27,6 @@ class LoginInWindow(QMainWindow, Ui_MainWindow):
         self.setupUi(self)
         self.network2 = global_var.get_network_client2()
         self.network2.printfSignal.connect(self.printEvent)
-
     
     @pyqtSignature("")
     def on_pushButton_key_clicked(self):
@@ -40,7 +41,9 @@ class LoginInWindow(QMainWindow, Ui_MainWindow):
         """
         Slot documentation goes here.
         """
-        word =unicode(self.textEdit_word.toPlainText()).encode('utf-8')
+        word =unicode(self.textEdit_word.toPlainText())
+        self.SendWordSignal.emit(word)
+        self.printEvent(u"发送："+word)
 
     def printEvent(self, line):
         self.textEdit_log.setText( unicode(self.textEdit_log.toPlainText()) + u'\n' + unicode(line))

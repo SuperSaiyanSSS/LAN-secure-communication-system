@@ -3,7 +3,7 @@
 """
 Module implementing HomeDialog.
 """
-from PyQt4 import QtGui
+from PyQt4 import QtGui, QtCore
 from PyQt4.QtGui import *
 from PyQt4.QtCore import *
 from PyQt4.QtCore import pyqtSignature
@@ -12,13 +12,15 @@ import global_var
 
 
 from Ui_home import Ui_Dialog
-from main import NetWorkLoginIn
+from main import NetWorkLoginIn, NetWorkSignUp
 
 
 class HomeDialog(QDialog, Ui_Dialog):
     """
     Class documentation goes here.
     """
+    UserAndPasswordSignal = QtCore.pyqtSignal(list)
+
     def __init__(self, parent=None):
         """
         Constructor
@@ -30,34 +32,51 @@ class HomeDialog(QDialog, Ui_Dialog):
         self.setupUi(self)
         # 设置密码模式
         self.lineEdit_2.setEchoMode(QLineEdit.Password)
-        self.network2 = NetWorkLoginIn()
-        global_var.set_network_client2(self.network2)
+
 
     @pyqtSignature("")
     def on_pushButton_clicked(self):
         """
         Slot documentation goes here.
         """
-        # TODO: not implemented yet
-        raise NotImplementedError
+        # 实例化注册的线程
+        self.network = NetWorkSignUp(self)
+        self.network.start()
 
+        username = unicode(self.lineEdit.text()).encode("utf-8")
+        password = unicode(self.lineEdit_2.text()).encode("utf-8")
+
+        self.UserAndPasswordSignal.emit([username, password])
+        QtGui.QMessageBox.information(self, 'Message', "注册成功！", QtGui.QMessageBox.Yes)
 
     @pyqtSignature("")
     def on_pushButton_2_clicked(self):
         """
         登录事件
         """
+        # 实例化登录的线程
+        self.network2 = NetWorkLoginIn(self)
+        self.network2.start()
+        global_var.set_network_client2(self.network2)
+
         username = unicode(self.lineEdit.text()).encode("utf-8")
         password = unicode(self.lineEdit_2.text()).encode("utf-8")
         # print username.encode("utf-8")
         # print password
         # print type(username.encode("utf-8"))
-        from main import NetWorkLoginIn
+
+
         from login_in import LoginInWindow
         self.logininwindow = LoginInWindow()
         self.logininwindow.show()
+        global_var.set_loginin_client(self.logininwindow)
 
-        self.network2.set_user_and_pwd(username, password)
+        # 先出来页面再关。。
+        self.UserAndPasswordSignal.emit([username, password])
+
+        # 发射信号
+      #  self.UserAndPasswordSignal.emit([username, password])
+      #  self.network2.set_user_and_pwd(username, password)
       #  global_var.set_network_client2(self.network2)
 
 

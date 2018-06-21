@@ -31,15 +31,6 @@ def jiami_des(line):
     return c
 
 
-def communication(client):
-    while True:
-        a = raw_input("请输入要发送的内容")
-        a = jiami_des(a)
-        client.write(a + str("\r\n"))
-        if a == str("1"):
-            break
-
-
 # 预处理
 def pre_treat(private_key, seed):
     result = private_key + seed
@@ -58,6 +49,47 @@ def hash_private_kai_of_m(private_kai, m):
     return private_kai
 
 
+class NetWorkSignUp(QtCore.QThread):
+    def __init__(self, parent=None):
+        super(NetWorkSignUp, self).__init__(parent)
+        self.parent = parent
+        self.parent.UserAndPasswordSignal.connect(self.set_user_and_pwd)
+        self.init_network()
+    def run(self):
+
+        pass
+
+    def init_network(self):
+        self.s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.s.connect((HOST, PROT))
+
+    def set_user_and_pwd(self, username_password_list):
+        username = username_password_list[0]
+        password = username_password_list[1]
+        # 绑定socket与fd
+        self.fd = self.s.makefile("rw", 0)
+        self.fd.write("f_" + username + "\r\n")
+        buf = self.fd.readline()
+
+        if not len(buf):
+            assert KeyError
+
+        print("收到了 " + buf)
+        if buf.split(" ")[0] == "S/Key":
+            seed = buf.split(" ")[1]
+            m = buf.split(" ")[2].split('\n')[0]
+            print("my seed " + seed)
+            print(m)
+            private_key = password
+            private_kai = pre_treat(private_key, seed)
+            first_hashed_result = hash_private_kai_of_m(private_kai, m)
+            # 发送第一次hash之后的值
+            self.fd.write(first_hashed_result + "\r\n")
+            # 结束标志
+            self.fd.write("\r\n")
+
+        self.fd.close()
+
 
 class NetWorkLoginIn(QtCore.QThread):
     # 不能放在__init__中 具体原因不明
@@ -67,17 +99,25 @@ class NetWorkLoginIn(QtCore.QThread):
 
     def __init__(self, parent=None):
         super(NetWorkLoginIn, self).__init__(parent)
+        self.parent = parent
+        self.parent.UserAndPasswordSignal.connect(self.set_user_and_pwd)
+        # 登陆成功/失败标志
+        self.flag = False
+        # self.init_network()
+        # self.parent.UserAndPasswordSignal.connect(self.set_user_and_pwd)
 
-        self.init_network()
+
     def run(self):
         self.init_network()
 
-
+        pass
     def init_network(self):
         self.s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.s.connect((HOST, PROT))
 
-    def set_user_and_pwd(self, username, password):
+    def set_user_and_pwd(self, username_password_list):
+        username = username_password_list[0]
+        password = username_password_list[1]
         # 绑定socket与fd
         self.fd = self.s.makefile("rw", 0)
         self.fd.write(username + "\r\n")
@@ -98,95 +138,32 @@ class NetWorkLoginIn(QtCore.QThread):
             self.fd.write(now_hashed_result + "\r\n")
             test_success = self.fd.readline()
             if test_success[0] == "s":
-                self.printfSignal.emit("登录成功`")
-                communication(self.fd)
+                self.printfSignal.emit(u"登录成功`")
+                self.flag = True
+                # self.communication(self.fd)
+                self.logininclient = global_var.get_loginin_client()
+                self.logininclient.SendWordSignal.connect(self.communication)
             elif test_success[0] == "f":
-                self.printfSignal.emit("输错密钥了")
+                self.printfSignal.emit(u"输错密钥了，请重新登录！！！")
+                self.flag = False
             else:
-                self.printfSignal.emit("非法相应")
+                self.printfSignal.emit(u"非法相应")
+                self.flag = False
             # 结束标志
                 self.fd.write("\r\n")
         else:
             # 如果没收到S/Key开头的则断言错误
             assert NameError
-        self.fd.close()
+      #  self.fd.close()
 
+    def communication(self, word):
+        print(word)
+          #  a = raw_input("请输入要发送的内容")
+        a = jiami_des(str(word))
+        self.fd.write(a + str("\r\n"))
+        # if a == str("1"):
+        #     break
 
-
-def client_process():
-    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    s.connect((HOST, PROT))
-
-    is_first = raw_input("是否为第一次登陆？")
-    print(type(is_first))
-    if is_first.lower() == "y":
-        client_name = raw_input("请输入用户名!")
-        # 绑定socket与fd
-        fd = s.makefile("rw", 0)
-        fd.write("f_" + client_name + "\r\n")
-        while True:
-            buf = fd.readline()
-            if not len(buf):
-                break
-            print("收到了 " + buf)
-            if buf.split(" ")[0] == "S/Key":
-                seed = buf.split(" ")[1]
-                m = buf.split(" ")[2].split('\n')[0]
-                print("my seed " + seed)
-                print(m)
-                private_key = raw_input("请输入要创建的私钥，牢记！")
-                private_kai = pre_treat(private_key, seed)
-                first_hashed_result = hash_private_kai_of_m(private_kai, m)
-                # 发送第一次hash之后的值
-                fd.write(first_hashed_result + "\r\n")
-                # 结束标志
-                fd.write("\r\n")
-            else:
-                # 如果没收到S/Key开头的则断言错误
-                assert NameError
-
-        fd.close()
-
-    elif is_first.lower() == "n":
-        client_name = raw_input("请输入用户名!")
-        # 绑定socket与fd
-        fd = s.makefile("rw", 0)
-        fd.write(client_name + "\r\n")
-        while True:
-            buf = fd.readline()
-            if not len(buf):
-                break
-            print("收到了 " + buf)
-            if buf.split(" ")[0] == "S/Key":
-                seed = buf.split(" ")[1]
-                m = buf.split(" ")[2].split('\n')[0]
-                print("my seed " + seed)
-                print(m)
-                private_key = raw_input("请输入之前记住的私钥！")
-                private_kai = pre_treat(private_key, seed)
-                now_hashed_result = hash_private_kai_of_m(private_kai, m)
-                # 发送输入的密钥预处理hash之后的值
-                fd.write(now_hashed_result + "\r\n")
-                test_success = fd.readline()
-                if test_success[0] == "s":
-                    print("恭喜老铁 ，登陆成功")
-                    communication(fd)
-                elif test_success[0] == "f":
-                    print("输错密钥了老铁，耻辱下播！")
-                else:
-                    print("非法响应！")
-                # 结束标志
-                fd.write("\r\n")
-                break
-            else:
-                # 如果没收到S/Key开头的则断言错误
-                assert NameError
-        fd.close()
-    else:
-        print("输入非法")
-    s.close()
-
-    sys.exit(app.exec_())
 
 if __name__ == '__main__':
-    client_process()
+    pass

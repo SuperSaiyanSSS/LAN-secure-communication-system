@@ -43,3 +43,10 @@ def get_queue(qw):
     global queue_word
     return queue_word
 
+def set_loginin_client(client):
+    global logininclient
+    logininclient = client
+
+def get_loginin_client():
+    global logininclient
+    return logininclient
